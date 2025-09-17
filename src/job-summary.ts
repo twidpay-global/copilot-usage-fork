@@ -150,8 +150,9 @@ export const createJobSummaryUsage = (data: CopilotUsageResponse, name: string) 
   const totalMetrics = Object.values(languageMetrics).reduce((acc, curr) => ({
     totalCodeAcceptances: acc.totalCodeAcceptances + curr.total_code_acceptances,
     totalCodeSuggestions: acc.totalCodeSuggestions + curr.total_code_suggestions,
-    totalLinesAccepted: acc.totalLinesAccepted + curr.total_code_lines_accepted
-  }), { totalCodeAcceptances: 0, totalCodeSuggestions: 0, totalLinesAccepted: 0 });
+    totalLinesAccepted: acc.totalLinesAccepted + curr.total_code_lines_accepted,
+    totalLinesSuggestions: acc.totalLinesSuggestions + curr.total_code_lines_suggested
+  }), { totalCodeAcceptances: 0, totalCodeSuggestions: 0, totalLinesAccepted: 0, totalLinesSuggestions: 0 });
 
   return summary
     .addHeading(`Copilot Usage for ${name}<br>${dateFormat(data[0].date)} - ${dateFormat(data[data.length - 1].date)}`)
@@ -160,8 +161,10 @@ export const createJobSummaryUsage = (data: CopilotUsageResponse, name: string) 
     .addTable([
       ['Code Suggestions', totalMetrics.totalCodeSuggestions.toLocaleString()],
       ['Code Acceptances', totalMetrics.totalCodeAcceptances.toLocaleString()],
-      ['Acceptance Rate', `${((totalMetrics.totalCodeAcceptances / totalMetrics.totalCodeSuggestions) * 100).toFixed(2)}%`],
+      ['Code Acceptance Rate', `${((totalMetrics.totalCodeAcceptances / totalMetrics.totalCodeSuggestions) * 100).toFixed(2)}%`],
       ['Lines of Code Accepted', totalMetrics.totalLinesAccepted.toLocaleString()],
+      ['Lines of Code Suggested', totalMetrics.totalLinesSuggestions.toLocaleString()],
+      ['Lines Acceptance Rate', `${((totalMetrics.totalLinesAccepted / totalMetrics.totalLinesSuggestions) * 100).toFixed(2)}%`],
       ['Chat Interactions', chatMetrics.totalChats.toLocaleString()],
       ['Chat Copy Events', chatMetrics.totalCopyEvents.toLocaleString()],
       ['Chat Insertion Events', chatMetrics.totalInsertEvents.toLocaleString()]
