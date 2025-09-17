@@ -1,6 +1,9 @@
-import { summary } from "@actions/core";
-import { createPieChart, createXYChart, DEFAULT_CHART_CONFIGS } from "./mermaid";
-import { dateFormat } from "./utility";
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.setJobSummaryTimeZone = exports.createJobSummarySeatAssignments = exports.createJobSummaryCopilotDetails = exports.createJobSummaryUsage = exports.sumNestedValue = void 0;
+const core_1 = require("@actions/core");
+const mermaid_1 = require("./mermaid");
+const utility_1 = require("./utility");
 const getEmptyBaseMetrics = () => ({
     total_engaged_users: 0,
     total_code_acceptances: 0,
@@ -8,7 +11,7 @@ const getEmptyBaseMetrics = () => ({
     total_code_lines_accepted: 0,
     total_code_lines_suggested: 0
 });
-export const sumNestedValue = (data, path) => {
+const sumNestedValue = (data, path) => {
     return data.reduce((sum, obj) => {
         let result = 0;
         const traverse = (current, pathIndex) => {
@@ -34,6 +37,7 @@ export const sumNestedValue = (data, path) => {
         return sum + result;
     }, 0);
 };
+exports.sumNestedValue = sumNestedValue;
 const aggregateMetricsBy = (data, groupFn) => {
     return data.reduce((acc, day) => {
         const dayMetrics = groupFn(day);
@@ -91,22 +95,22 @@ const getChatMetrics = (dailyTotals) => ({
     totalCopyEvents: dailyTotals.reduce((sum, day) => sum + (day.total_chat_copy_events || 0), 0),
     totalInsertEvents: dailyTotals.reduce((sum, day) => sum + (day.total_chat_insert_events || 0), 0)
 });
-export const createJobSummaryUsage = (data, name) => {
+const createJobSummaryUsage = (data, name) => {
     const languageMetrics = aggregateMetricsBy(data, groupLanguageMetrics);
     const editorMetrics = aggregateMetricsBy(data, groupEditorMetrics);
     const dailyTotals = data.map(day => ({
         date: day.date,
         total_active_users: day.total_active_users || 0,
         total_engaged_users: day.total_engaged_users || 0,
-        total_code_acceptances: sumNestedValue([day], ['copilot_ide_code_completions', 'editors', 'models', 'languages', 'total_code_acceptances']),
-        total_code_suggestions: sumNestedValue([day], ['copilot_ide_code_completions', 'editors', 'models', 'languages', 'total_code_suggestions']),
-        total_code_lines_accepted: sumNestedValue([day], ['copilot_ide_code_completions', 'editors', 'models', 'languages', 'total_code_lines_accepted']),
-        total_code_lines_suggested: sumNestedValue([day], ['copilot_ide_code_completions', 'editors', 'models', 'languages', 'total_code_lines_suggested']),
-        total_chats: sumNestedValue([day], ['copilot_ide_chat', 'editors', 'models', 'total_chats']),
-        total_chat_copy_events: sumNestedValue([day], ['copilot_ide_chat', 'editors', 'models', 'total_chat_copy_events']),
-        total_chat_insert_events: sumNestedValue([day], ['copilot_ide_chat', 'editors', 'models', 'total_chat_insertion_events']),
-        total_dotcom_chat_chats: sumNestedValue([day], ['copilot_dotcom_chat', 'models', 'total_chats']),
-        total_dotcom_pr_summaries_created: sumNestedValue([day], ['copilot_dotcom_pull_requests', 'repositories', 'models', 'total_pr_summaries_created']),
+        total_code_acceptances: (0, exports.sumNestedValue)([day], ['copilot_ide_code_completions', 'editors', 'models', 'languages', 'total_code_acceptances']),
+        total_code_suggestions: (0, exports.sumNestedValue)([day], ['copilot_ide_code_completions', 'editors', 'models', 'languages', 'total_code_suggestions']),
+        total_code_lines_accepted: (0, exports.sumNestedValue)([day], ['copilot_ide_code_completions', 'editors', 'models', 'languages', 'total_code_lines_accepted']),
+        total_code_lines_suggested: (0, exports.sumNestedValue)([day], ['copilot_ide_code_completions', 'editors', 'models', 'languages', 'total_code_lines_suggested']),
+        total_chats: (0, exports.sumNestedValue)([day], ['copilot_ide_chat', 'editors', 'models', 'total_chats']),
+        total_chat_copy_events: (0, exports.sumNestedValue)([day], ['copilot_ide_chat', 'editors', 'models', 'total_chat_copy_events']),
+        total_chat_insert_events: (0, exports.sumNestedValue)([day], ['copilot_ide_chat', 'editors', 'models', 'total_chat_insertion_events']),
+        total_dotcom_chat_chats: (0, exports.sumNestedValue)([day], ['copilot_dotcom_chat', 'models', 'total_chats']),
+        total_dotcom_pr_summaries_created: (0, exports.sumNestedValue)([day], ['copilot_dotcom_pull_requests', 'repositories', 'models', 'total_pr_summaries_created']),
     }));
     const chatMetrics = getChatMetrics(dailyTotals);
     const topLanguages = Object.entries(languageMetrics)
@@ -119,8 +123,8 @@ export const createJobSummaryUsage = (data, name) => {
         totalLinesAccepted: acc.totalLinesAccepted + curr.total_code_lines_accepted,
         totalLinesSuggestions: acc.totalLinesSuggestions + curr.total_code_lines_suggested
     }), { totalCodeAcceptances: 0, totalCodeSuggestions: 0, totalLinesAccepted: 0, totalLinesSuggestions: 0 });
-    return summary
-        .addHeading(`Copilot Usage for ${name}<br>${dateFormat(data[0].date)} - ${dateFormat(data[data.length - 1].date)}`)
+    return core_1.summary
+        .addHeading(`Copilot Usage for ${name}<br>${(0, utility_1.dateFormat)(data[0].date)} - ${(0, utility_1.dateFormat)(data[data.length - 1].date)}`)
         .addRaw(`Metrics for the last ${data.length} days`)
         .addHeading('Totals', 2)
         .addTable([
@@ -135,9 +139,9 @@ export const createJobSummaryUsage = (data, name) => {
         ['Chat Insertion Events', chatMetrics.totalInsertEvents.toLocaleString()]
     ])
         .addHeading('Daily Engaged Users', 3)
-        .addRaw(createXYChart({
+        .addRaw((0, mermaid_1.createXYChart)({
         xAxis: {
-            categories: DEFAULT_CHART_CONFIGS.dailyCategories(data)
+            categories: mermaid_1.DEFAULT_CHART_CONFIGS.dailyCategories(data)
         },
         yAxis: {},
         series: [
@@ -153,35 +157,35 @@ export const createJobSummaryUsage = (data, name) => {
         legend: ['Active', 'Engaged']
     }))
         .addHeading('Daily Engaged Users by Product', 3)
-        .addRaw(createXYChart({
+        .addRaw((0, mermaid_1.createXYChart)({
         xAxis: {
-            categories: DEFAULT_CHART_CONFIGS.dailyCategories(data)
+            categories: mermaid_1.DEFAULT_CHART_CONFIGS.dailyCategories(data)
         },
         yAxis: {},
         series: [
             {
                 type: 'line',
-                values: data.map(day => sumNestedValue([day], ['copilot_ide_code_completions', 'total_engaged_users']))
+                values: data.map(day => (0, exports.sumNestedValue)([day], ['copilot_ide_code_completions', 'total_engaged_users']))
             },
             {
                 type: 'line',
-                values: data.map(day => sumNestedValue([day], ['copilot_ide_chat', 'total_engaged_users']))
+                values: data.map(day => (0, exports.sumNestedValue)([day], ['copilot_ide_chat', 'total_engaged_users']))
             },
             {
                 type: 'line',
-                values: data.map(day => sumNestedValue([day], ['copilot_dotcom_chat', 'total_engaged_users']))
+                values: data.map(day => (0, exports.sumNestedValue)([day], ['copilot_dotcom_chat', 'total_engaged_users']))
             },
             {
                 type: 'line',
-                values: data.map(day => sumNestedValue([day], ['copilot_dotcom_pull_requests', 'total_engaged_users']))
+                values: data.map(day => (0, exports.sumNestedValue)([day], ['copilot_dotcom_pull_requests', 'total_engaged_users']))
             }
         ],
         legend: ['IDE Code Completions', 'IDE Chat', 'Dotcom Chat', 'Dotcom Pull Requests']
     }))
         .addHeading('IDE Completion', 2)
         .addHeading('Suggestions vs. Acceptances', 3)
-        .addRaw(createXYChart({
-        xAxis: { categories: DEFAULT_CHART_CONFIGS.dailyCategories(data) },
+        .addRaw((0, mermaid_1.createXYChart)({
+        xAxis: { categories: mermaid_1.DEFAULT_CHART_CONFIGS.dailyCategories(data) },
         yAxis: {},
         series: [
             {
@@ -196,8 +200,8 @@ export const createJobSummaryUsage = (data, name) => {
         legend: ['Suggestions', 'Acceptances']
     }))
         .addHeading('Lines Suggested vs. Accepted', 3)
-        .addRaw(createXYChart({
-        xAxis: { categories: DEFAULT_CHART_CONFIGS.dailyCategories(data) },
+        .addRaw((0, mermaid_1.createXYChart)({
+        xAxis: { categories: mermaid_1.DEFAULT_CHART_CONFIGS.dailyCategories(data) },
         yAxis: {},
         series: [
             {
@@ -212,9 +216,9 @@ export const createJobSummaryUsage = (data, name) => {
         legend: ['Lines Suggested', 'Lines Accepted']
     }))
         .addHeading('Acceptance Rate', 3)
-        .addRaw(createXYChart({
+        .addRaw((0, mermaid_1.createXYChart)({
         xAxis: {
-            categories: DEFAULT_CHART_CONFIGS.dailyCategories(data)
+            categories: mermaid_1.DEFAULT_CHART_CONFIGS.dailyCategories(data)
         },
         yAxis: {
             min: 0,
@@ -224,17 +228,17 @@ export const createJobSummaryUsage = (data, name) => {
             {
                 type: 'line',
                 values: data.map(day => {
-                    const acceptances = sumNestedValue([day], ['copilot_ide_code_completions', 'editors', 'models', 'languages', 'total_code_acceptances']);
-                    const suggestions = sumNestedValue([day], ['copilot_ide_code_completions', 'editors', 'models', 'languages', 'total_code_suggestions']);
+                    const acceptances = (0, exports.sumNestedValue)([day], ['copilot_ide_code_completions', 'editors', 'models', 'languages', 'total_code_acceptances']);
+                    const suggestions = (0, exports.sumNestedValue)([day], ['copilot_ide_code_completions', 'editors', 'models', 'languages', 'total_code_suggestions']);
                     return suggestions > 0 ? Math.round((acceptances / suggestions) * 100) : 0;
                 })
             }
         ]
     }))
         .addHeading('Acceptance Rate by Language', 3)
-        .addRaw(createXYChart({
+        .addRaw((0, mermaid_1.createXYChart)({
         xAxis: {
-            categories: DEFAULT_CHART_CONFIGS.dailyCategories(data)
+            categories: mermaid_1.DEFAULT_CHART_CONFIGS.dailyCategories(data)
         },
         yAxis: {
             min: 0,
@@ -261,15 +265,15 @@ export const createJobSummaryUsage = (data, name) => {
         legend: topLanguages
     }))
         .addHeading('Language Usage by Engaged Users', 3)
-        .addRaw(createPieChart(Object.fromEntries(Object.entries(languageMetrics)
+        .addRaw((0, mermaid_1.createPieChart)(Object.fromEntries(Object.entries(languageMetrics)
         .map(([lang, metrics]) => [lang, metrics.total_engaged_users]))))
         .addHeading('Editor Usage by Engaged Users', 3)
-        .addRaw(createPieChart(Object.fromEntries(Object.entries(editorMetrics)
+        .addRaw((0, mermaid_1.createPieChart)(Object.fromEntries(Object.entries(editorMetrics)
         .map(([editor, metrics]) => [editor, metrics.total_engaged_users]))))
         .addHeading('IDE Copilot Chat', 2)
-        .addRaw(createXYChart({
+        .addRaw((0, mermaid_1.createXYChart)({
         xAxis: {
-            categories: DEFAULT_CHART_CONFIGS.dailyCategories(data)
+            categories: mermaid_1.DEFAULT_CHART_CONFIGS.dailyCategories(data)
         },
         yAxis: {},
         series: [
@@ -290,9 +294,9 @@ export const createJobSummaryUsage = (data, name) => {
     }))
         .addHeading('Copilot .COM Chat', 2)
         .addHeading('Total Chats', 3)
-        .addRaw(createXYChart({
+        .addRaw((0, mermaid_1.createXYChart)({
         xAxis: {
-            categories: DEFAULT_CHART_CONFIGS.dailyCategories(data)
+            categories: mermaid_1.DEFAULT_CHART_CONFIGS.dailyCategories(data)
         },
         yAxis: {},
         series: [
@@ -305,9 +309,9 @@ export const createJobSummaryUsage = (data, name) => {
     }))
         .addHeading('Copilot .COM Pull Request', 2)
         .addHeading('Summaries Created', 3)
-        .addRaw(createXYChart({
+        .addRaw((0, mermaid_1.createXYChart)({
         xAxis: {
-            categories: DEFAULT_CHART_CONFIGS.dailyCategories(data)
+            categories: mermaid_1.DEFAULT_CHART_CONFIGS.dailyCategories(data)
         },
         yAxis: {},
         series: [
@@ -319,8 +323,9 @@ export const createJobSummaryUsage = (data, name) => {
         legend: ['Total PR Summaries Created']
     }));
 };
-export const createJobSummaryCopilotDetails = (orgCopilotDetails) => {
-    return summary
+exports.createJobSummaryUsage = createJobSummaryUsage;
+const createJobSummaryCopilotDetails = (orgCopilotDetails) => {
+    return core_1.summary
         .addHeading('Seat Info')
         .addHeading('Organization Copilot Details', 3)
         .addTable([
@@ -353,10 +358,11 @@ export const createJobSummaryCopilotDetails = (orgCopilotDetails) => {
         ['CLI Enabled', orgCopilotDetails.cli?.toLocaleUpperCase() || 'Unknown'],
     ]);
 };
-export const createJobSummarySeatAssignments = (data) => {
+exports.createJobSummaryCopilotDetails = createJobSummaryCopilotDetails;
+const createJobSummarySeatAssignments = (data) => {
     if (!data)
         data = [];
-    return summary
+    return core_1.summary
         .addHeading('Seat Assignments')
         .addTable([
         [
@@ -371,13 +377,15 @@ export const createJobSummarySeatAssignments = (data) => {
         ...data.map(seat => [
             `<img src="${seat.assignee?.avatar_url}" width="33" />`,
             seat.assignee?.login,
-            seat.last_activity_at ? dateFormat(seat.last_activity_at, { month: 'numeric', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric' }) : 'No Activity',
+            seat.last_activity_at ? (0, utility_1.dateFormat)(seat.last_activity_at, { month: 'numeric', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric' }) : 'No Activity',
             seat.last_activity_editor || 'N/A',
-            dateFormat(seat.created_at),
-            dateFormat(seat.pending_cancellation_date || ''),
+            (0, utility_1.dateFormat)(seat.created_at),
+            (0, utility_1.dateFormat)(seat.pending_cancellation_date || ''),
             String(seat.assigning_team?.name || ' '),
         ])
     ]);
 };
-export const setJobSummaryTimeZone = (timeZone) => process.env.TZ = timeZone;
+exports.createJobSummarySeatAssignments = createJobSummarySeatAssignments;
+const setJobSummaryTimeZone = (timeZone) => process.env.TZ = timeZone;
+exports.setJobSummaryTimeZone = setJobSummaryTimeZone;
 //# sourceMappingURL=job-summary.js.map
